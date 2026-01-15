@@ -1,0 +1,10 @@
+<tr>
+    <td>{uid}</td>
+    <td>{task}</td>
+    <td>
+        <form action="/delete" method="POST">
+            <input type="hidden" name="id" value="{uid}">
+            <button type="submit">삭제</button>
+        </form>
+    </td>
+</tr>

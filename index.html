@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>Essential System</title></head>
+<body>
+    <h1>Data List</h1>
+    <table border="1" style="width:100%;">
+        <thead><tr><th>ID</th><th>Content</th><th>Action</th></tr></thead>
+        <tbody>{rows}</tbody>
+    </table>
+    <hr>
+    <form action="/process" method="POST">
+        <p>ID: <input type="text" name="id" placeholder="수정 시 ID 입력"></p>
+        <p>Task: <input type="text" name="task" required></p>
+        <button type="submit">Execute</button>
+    </form>
+</body>
+</html>
