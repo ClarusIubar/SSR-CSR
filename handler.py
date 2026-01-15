@@ -7,8 +7,10 @@ class EssentialHandler(BaseHTTPRequestHandler):
         super().__init__(request, client_address, server)
 
     def _read_file(self, name):
-        if not os.path.exists(name): return ""
-        with open(name, "r", encoding='utf-8') as f: return f.read()
+        if not os.path.exists(name): 
+            return ""
+        with open(name, "r", encoding='utf-8') as file: 
+            return file.read()
 
     def _render(self, user_data):
         layout = self._read_file('index.html')
@@ -21,7 +23,8 @@ class EssentialHandler(BaseHTTPRequestHandler):
             sid, user_data, is_new = self.store.get_session(self.headers.get('Cookie'))
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
-            if is_new: self.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
+            if is_new: 
+                self.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
             self.end_headers()
             self.wfile.write(self._render(user_data))
 
