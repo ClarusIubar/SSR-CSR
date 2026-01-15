@@ -13,9 +13,9 @@ class EssentialHandler(BaseHTTPRequestHandler):
             return file.read()
 
     def _render(self, user_data):
-        layout = self._read_file('index.html')
-        rows = "".join(self._read_file('row.html').format(uid=u, task=i['task']) 
-                       for u, i in user_data.items()) if user_data else self._read_file('empty.html')
+        layout = self._read_file('html/index.html')
+        rows = "".join(self._read_file('html/row.html').format(uid=u, task=i['task']) 
+                       for u, i in user_data.items()) if user_data else self._read_file('html/empty.html')
         return layout.replace('{rows}', rows).encode('utf-8')
 
     def do_GET(self):
