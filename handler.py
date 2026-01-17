@@ -1,4 +1,4 @@
-import os, urllib.parse, uuid
+import os, urllib.parse, uuid, json
 from http.server import BaseHTTPRequestHandler
 
 class EssentialHandler(BaseHTTPRequestHandler):
@@ -19,14 +19,45 @@ class EssentialHandler(BaseHTTPRequestHandler):
         return layout.replace('{rows}', rows).encode('utf-8')
 
     def do_GET(self):
-        if self.path == '/':
-            sid, user_data, is_new = self.store.get_session(self.headers.get('Cookie'))
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html; charset=utf-8')
-            if is_new: 
-                self.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
-            self.end_headers()
-            self.wfile.write(self._render(user_data))
+        router = {
+            '/': self.route_index,
+            '/maslow': self.route_maslow
+        }
+
+        action = router.get(self.path)
+
+        if action:
+            action()
+        else:
+            self.send_error(404, "Not Found")
+
+    def route_index(self):
+        sid, user_data, is_new = self.store.get_session(self.headers.get('Cookie'))
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        if is_new: 
+            self.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
+        self.end_headers()
+        self.wfile.write(self._render(user_data))
+
+    def route_maslow(self):
+        json_path = 'data/maslow.json'
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                maslow_steps = json.load(f)
+        else:
+            maslow_steps = []
+
+        brick = self._read_file('html/maslow_brick.html')
+        stack = "".join(brick.format(**step) for step in maslow_steps)
+        
+        layout = self._read_file('html/maslow.html')
+        content = layout.replace('{stack}', stack).encode('utf-8')
+
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.end_headers()
+        self.wfile.write(content)
 
     def do_POST(self):
         _, user_data, _ = self.store.get_session(self.headers.get('Cookie'))

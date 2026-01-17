@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>매슬로우 욕구</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            margin: 0;
+        }
+        h1 { margin-bottom: 40px; font-weight: 300; letter-spacing: 2px; color: #ffffff; }
+        .stack-container {
+            display: flex;
+            flex-direction: column-reverse; /* 아래서부터 위로 적층 */
+            width: 100%;
+            max-width: 900px;
+            gap: 10px;
+        }
+        .brick { display: flex; border: 1px solid #333; background: #252525; transition: all 0.3s ease; }
+        .brick:hover { background: #2d2d2d; border-color: #444; transform: translateY(-2px); }
+        .cell { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid #333; }
+        .cell:last-child { border-right: none; }
+        .label { font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
+        .content { font-size: 15px; line-height: 1.5; }
+        .level-indicator { width: 6px; flex-shrink: 0; }
+        /* 층별 색상 강조 */
+        .l1 .level-indicator { background-color: #4a4a4a; }
+        .l2 .level-indicator { background-color: #5a5a5a; }
+        .l3 .level-indicator { background-color: #707070; }
+        .l4 .level-indicator { background-color: #909090; }
+        .l5 .level-indicator { background-color: #ffffff; }
+        .back-link { margin-top: 40px; color: #666; text-decoration: none; font-size: 13px; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>매슬로우 욕구</h1>
+    <div class="stack-container">
+        {stack}
+    </div>
+    <a href="/" class="back-link">CRUD 테이블</a>
+</body>
+</html>
