@@ -19,6 +19,12 @@ class EssentialHandler(BaseHTTPRequestHandler):
         return layout.replace('{rows}', rows).encode('utf-8')
 
     def do_GET(self):
+
+        # 요청 라인 출력
+        print(f"\n[Request Line]\n{self.requestline}")
+        # 요청 헤더 출력
+        print(f"\n[Request Headers]\n{self.headers}")
+
         router = {
             '/': self.route_index,
             '/maslow': self.route_maslow
