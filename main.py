@@ -10,10 +10,10 @@ if __name__ == "__main__":
     handler_factory = partial(EssentialHandler, store=store)
     server = ThreadingHTTPServer((HOST, PORT), handler_factory)
     
-    print(f"병렬 세션 시스템 기동: http://{HOST}:{PORT}")
+    print(f"서버 기동: http://{HOST}:{PORT}")
 
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n자원 정리 및 종료")
+        print("\n종료")
         server.server_close()
