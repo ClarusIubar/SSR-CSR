@@ -4,34 +4,34 @@
         "step_name": "생리",
         "step_desc": "생존을 위한 필수 조건",
         "analogy": "환경 구축 및 런타임 생존",
-        "thought": "사용자님이 직접 작성하실 공간 1"
+        "thought": "배가 불러요."
     },
     {
         "level": 2,
         "step_name": "안전",
         "step_desc": "위험으로부터의 보호 및 심리적 안정",
         "analogy": "안정성 확보 및 데이터 영속화",
-        "thought": "사용자님이 직접 작성하실 공간 2"
+        "thought": "이불 밖은 위험해!"
     },
     {
         "level": 3,
         "step_name": "사회적",
         "step_desc": "소속감, 유대감 및 타인과의 관계",
         "analogy": "모듈화 및 인터페이스 통신",
-        "thought": "사용자님이 직접 작성하실 공간 3"
+        "thought": "안녕하세요."
     },
     {
         "level": 4,
         "step_name": "존중",
         "step_desc": "성취에 대한 승인, 명예 및 자부심",
         "analogy": "최적화 및 수평적 확장",
-        "thought": "사용자님이 직접 작성하실 공간 4"
+        "thought": "아이고 대단하셔유"
     },
     {
         "level": 5,
         "step_name": "자아실현",
         "step_desc": "잠재력의 발휘와 창조적 자아 완성",
         "analogy": "도메인 주도 설계 및 아키텍처 완성",
-        "thought": "사용자님이 직접 작성하실 공간 5"
+        "thought": "내가 제일 잘 나가!"
     }
 ]

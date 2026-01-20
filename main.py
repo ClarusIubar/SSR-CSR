@@ -1,3 +1,4 @@
+import os
 from http.server import ThreadingHTTPServer
 from handler import EssentialHandler
 from session import SessionStore
@@ -7,7 +8,9 @@ HOST, PORT = 'localhost', 8000
 
 if __name__ == "__main__":
     store = SessionStore()
-    handler_factory = partial(EssentialHandler, store=store)
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+    handler_factory = partial(EssentialHandler, store=store, base_dir=base_path)
     server = ThreadingHTTPServer((HOST, PORT), handler_factory)
     
     print(f"서버 기동: http://{HOST}:{PORT}")
