@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>매슬로우 욕구</title>
     <style>
         body {
@@ -34,12 +35,32 @@
         .l3 .level-indicator { background-color: #707070; }
         .l4 .level-indicator { background-color: #909090; }
         .l5 .level-indicator { background-color: #ffffff; }
-        .back-link { margin-top: 40px; color: #666; text-decoration: none; font-size: 13px; }
-        .back-link:hover { color: #fff; }
         
-        /* 성찰 영역 스타일 */
         .thought-area { margin-top: 30px; border-top: 1px solid #333; padding-top: 30px; width: 100%; max-width: 900px; }
         .thought-box { padding: 30px; border: 1px dashed #444; background: #202020; }
+
+        .navigation-area { 
+            margin-top: 50px; 
+            padding-top: 30px; 
+            border-top: 1px solid #333; 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            width: 100%; 
+            max-width: 900px;
+        }
+        .nav-btn { 
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 10px 22px; 
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-size: 13px; 
+            font-weight: bold; 
+            transition: all 0.2s; 
+        }
+        .nav-btn:hover { background: #334155; transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -58,6 +79,9 @@
         </div>
     </div>
 
-    <a href="/" class="back-link">CRUD 테이블</a>
+    <div class="navigation-area">
+        <a href="/" class="nav-btn">← SSR 모드</a>
+        <a href="/client" class="nav-btn">CSR 모드 →</a>
+    </div>
 </body>
 </html>

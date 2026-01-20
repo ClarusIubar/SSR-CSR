@@ -1,4 +1,4 @@
-import urllib.parse, uuid
+import urllib.parse, uuid, json
 
 class Request:
     def __init__(self, handler):
@@ -52,3 +52,16 @@ class Response:
 
     def error(self, code, message):
         self._handler.send_error(code, message)
+
+    # CSR -> 데이터만 이동
+    def json(self, data, sid=None):
+            try:
+                body = json.dumps(data, ensure_ascii=False)
+                self._handler.send_response(200)
+                self._handler.send_header('Content-type', 'application/json; charset=utf-8')
+                if sid: self._handler.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
+                self._handler.end_headers()
+                self._handler.wfile.write(body.encode('utf-8'))
+            except (ConnectionAbortedError, BrokenPipeError):
+                # 브라우저가 도망갔을 경우, 무리하게 보내지 않고 조용히 행위를 종료함
+                print("클라이언트가 응답을 기다리지 않고 연결을 끊었습니다.")
