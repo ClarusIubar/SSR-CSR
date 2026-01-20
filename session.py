@@ -5,8 +5,8 @@ class SessionStore:
     def __init__(self):
         self._storage = {}
 
-    def get_session(self, cookie_str):
-        cookies = urllib.parse.parse_qs((cookie_str or "").replace('; ', '&'))
+    def get_session(self, cookie):
+        cookies = urllib.parse.parse_qs((cookie or "").replace('; ', '&'))
         sid = cookies.get('session_id', [None])[0]
 
         is_new = False
