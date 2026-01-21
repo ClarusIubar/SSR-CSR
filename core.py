@@ -21,13 +21,5 @@ class Response:
     def __init__(self, handler):
         self._handler = handler
 
-    def json(self, data, sid=None):
-        try:
-            body = json.dumps(data, ensure_ascii=False)
-            self._handler.send_response(200)
-            self._handler.send_header('Content-type', 'application/json; charset=utf-8')
-            if sid: self._handler.send_header('Set-Cookie', f'session_id={sid}; Path=/; HttpOnly')
-            self._handler.end_headers()
-            self._handler.wfile.write(body.encode('utf-8'))
-        except (ConnectionAbortedError, BrokenPipeError):
-            print("클라이언트가 응답을 기다리지 않고 연결을 끊었습니다.")
+    def json(self):
+        return NotImplemented
