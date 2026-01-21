@@ -16,7 +16,7 @@ class EssentialHandler(BaseHTTPRequestHandler):
         self.view = ViewRenderer(self.base_dir)
         self.service = MaslowService(self.base_dir)
         
-        # 2. 경로 지도
+        # 2. 경로 맵핑
         router = {
             # 1. 기존 SSR 경로
             ('GET' , '/'       ): self.show_index,
