@@ -2,14 +2,112 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Pure Script Component</title>
+    <title>Sequence Observer - Reconnaissance</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
+        #root { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .recon-log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; font-family: monospace; margin-top: 20px; font-size: 0.9em; }
+        .recon-log h4 { color: #569cd6; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .event-line { margin: 5px 0; border-left: 2px solid #4ec9b0; padding-left: 10px; }
+        .event-name { color: #ce9178; font-weight: bold; }
+        .control-panel { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 8px; border-bottom: 1px solid #eee; }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        </div>
+
     <script>
-        // 아 몰라 여기 외에는 노다지임.
+        // 아 몰라 여기 외에는 노다지임. 
         // 여기 안에만 작성하자.
 
+        const Store = {
+            tasks: [],
+            traces: [] // 서버에서 받은 정찰 데이터 보관
+        };
+
+        const App = {
+            // 1. 서버 통신 및 관측 데이터 추출
+            async request(path, method = 'GET', body = null) {
+                try {
+                    const res = await fetch(path, {
+                        method,
+                        headers: body ? { 'Content-Type': 'application/json' } : {},
+                        body: body ? JSON.stringify(body) : null
+                    });
+
+                    // 서버가 배후에서 수집한 X-Sequence-Trace 읽기
+                    const traceHeader = res.headers.get('X-Sequence-Trace');
+                    if (traceHeader) {
+                        Store.traces = JSON.parse(traceHeader);
+                        // 콘솔에도 표 형식으로 정찰 보고
+                        console.table(Store.traces);
+                    }
+                    return await res.json();
+                    
+                } catch (e) {
+                    console.error("통신 실패:", e);
+                    return { err: "Connection Failed" };
+                }
+            },
+
+            // 2. 행위(Action) 정의
+            async loadTasks() {
+                const data = await this.request('/api/tasks');
+                Store.tasks = data.tasks || [];
+                this.render();
+            },
+
+            async addTask() {
+                const input = document.getElementById('taskInput');
+                if (!input.value) return;
+
+                await this.request('/api/tasks', 'POST', { task: input.value });
+                input.value = '';
+                await this.loadTasks();
+            },
+
+            // 3. 화면 그리기 (Rendering)
+            render() {
+                const root = document.getElementById('root');
+                
+                root.innerHTML = `
+                    <h3>CRUD & Sequence Observation</h3>
+                    
+                    <div class="control-panel">
+                        <input type="text" id="taskInput" placeholder="새로운 과업 입력...">
+                        <button onclick="App.addTask()">과업 기록</button>
+                    </div>
+
+                    <div class="content-view">
+                        <h4>Storage List</h4>
+                        <ul>
+                            ${Store.tasks.length > 0 
+                                ? Store.tasks.map(t => `<li>${t}</li>`).join('') 
+                                : '<li>기록된 과업이 없습니다.</li>'}
+                        </ul>
+                    </div>
+
+                    <div class="recon-log">
+                        <h4>Reconnaissance: Sequence Trace</h4>
+                        ${Store.traces.map(t => `
+                            <div class="event-line">
+                                <span class="event-name">[${t.event}]</span> 
+                                <span class="event-data">${JSON.stringify(t.data)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        };
+
+        // 초기 실행
+        App.loadTasks();
     </script>
 </body>
 </html>
