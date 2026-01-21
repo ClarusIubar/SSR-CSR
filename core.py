@@ -1,25 +1,41 @@
-import urllib.parse, uuid, json
-
 class Request:
-    def __init__(self, handler):
-        self.method = handler.command
-        self.path = handler.path.split('?')[0].rstrip('/') or '/'
-        self._handler = handler
+    def __init__(self):
+        # request-line
+        self.method = None
+        self.path = None
+        self.protocol = "HTTP/1.1" # protocol
 
-    @property
-    def call(self):
-        return (self.method, self.path)
+        # request-header
+        # self.host = None
+        # self.auth = None
+        # self.content_type = None
+        # self.user_agent = None
 
-    def new_id(self):
-        return str(uuid.uuid4())
+        # headers
+        self.headers = {} # 너무 세분화 했나?
 
-# 서버에서 요청을 받는 것만 생각해서 @property를 쉽게 생각했는데,
-# 클라이언트가 응답을 받는 것은 JSON이나 데이터를 받아야 하는데,
-# 왜 여기는 미처 @property를 쓸 생각을 미쳐 못했나.
-# 서버측면에서만 생각했나봄.
+        # body
+        self.body = None
+
 class Response:
-    def __init__(self, handler):
-        self._handler = handler
 
-    def json(self):
-        return NotImplemented
+    def __init__(self):
+        # response-line
+        self.protocol = "HTTP/1.1" # protocol
+        self.status_code = None
+        self.reason_phrase = None
+
+        # response-header
+        # self.content_type = "application/json; charset=utf-8" # json
+        # self.set_cookie = None
+        # self.cache_control = None
+        # self.server = None
+
+        # headers
+        self.header = {
+            "Content-Type" : "application/json; charset=utf-8",
+            "Server": "PurePythonServer/1.0"
+        }
+
+        # body
+        self.body = None
