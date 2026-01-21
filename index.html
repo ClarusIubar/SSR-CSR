@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Pure Script Component</title>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        /**
+         * TaskManager Component
+         * 스타일, 구조, 로직이 모두 이 스크립트 안에 포함됩니다.
+         */
+        const TaskManager = (function() {
+            // 1. 상태 및 스타일 정의
+            let _state = { tasks: {} };
+            
+            const styles = `
+                .task-container { max-width: 400px; margin: 40px auto; font-family: sans-serif; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+                .task-header { font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; color: #1e293b; }
+                .input-group { display: flex; gap: 8px; margin-bottom: 20px; }
+                .task-input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; }
+                .task-input:focus { border-color: #3b82f6; }
+                .add-btn { background: #3b82f6; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+                .task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9; }
+                .del-btn { color: #ef4444; background: #fee2e2; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+                .empty-msg { text-align: center; color: #94a3b8; padding: 20px; }
+            `;
+
+            // 2. 내부 로직 (API & UI 처리)
+            const UI = {
+                injectStyles() {
+                    const styleTag = document.createElement('style');
+                    styleTag.textContent = styles;
+                    document.head.appendChild(styleTag);
+                },
+                
+                async refresh(listContainer) {
+                    const res = await fetch('/api/tasks');
+                    _state.tasks = await res.json();
+                    this.renderList(listContainer);
+                },
+
+                renderList(container) {
+                    const entries = Object.entries(_state.tasks);
+                    if (entries.length === 0) {
+                        container.innerHTML = `<div class="empty-msg">데이터가 없습니다.</div>`;
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    entries.forEach(([id, t]) => {
+                        const item = document.createElement('div');
+                        item.className = 'task-item';
+                        item.innerHTML = `<span>${t.task}</span>`;
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'del-btn';
+                        delBtn.textContent = '삭제';
+                        delBtn.onclick = async () => {
+                            await fetch('/api/delete', { method: 'POST', body: new URLSearchParams({ id }) });
+                            await this.refresh(container);
+                        };
+                        
+                        item.appendChild(delBtn);
+                        container.appendChild(item);
+                    });
+                }
+            };
+
+            // 3. 외부 공개 메서드 (Mount)
+            return {
+                mount(targetId) {
+                    const target = document.getElementById(targetId);
+                    if (!target) return;
+
+                    UI.injectStyles();
+
+                    // 구조 생성
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'task-container';
+                    wrapper.innerHTML = `
+                        <div class="task-header">Task Manager</div>
+                        <div class="input-group"></div>
+                        <div class="list-wrapper"></div>
+                    `;
+
+                    const input = document.createElement('input');
+                    input.className = 'task-input';
+                    input.placeholder = '할 일을 입력하세요';
+
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'add-btn';
+                    addBtn.textContent = '추가';
+
+                    const listWrapper = wrapper.querySelector('.list-wrapper');
+
+                    addBtn.onclick = async () => {
+                        if (!input.value.trim()) return;
+                        await fetch('/api/save', { method: 'POST', body: new URLSearchParams({ task: input.value }) });
+                        input.value = '';
+                        await UI.refresh(listWrapper);
+                    };
+
+                    wrapper.querySelector('.input-group').append(input, addBtn);
+                    target.appendChild(wrapper);
+
+                    // 초기 데이터 로드
+                    UI.refresh(listWrapper);
+                }
+            };
+        })();
+
+        // 앱 실행
+        TaskManager.mount('root');
+    </script>
+</body>
+</html>
