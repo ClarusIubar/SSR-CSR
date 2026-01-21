@@ -1,13 +1,13 @@
 import os
 from http.server import HTTPServer
-from handler import EssentialHandler
+from handler import Handler
 
 HOST, PORT = 'localhost', 8000
 
 if __name__ == "__main__":
 
     base_path = os.path.dirname(os.path.abspath(__file__))
-    server = HTTPServer((HOST, PORT), EssentialHandler)
+    server = HTTPServer((HOST, PORT), Handler)
     
     print(f"서버 기동: http://{HOST}:{PORT}")
 
