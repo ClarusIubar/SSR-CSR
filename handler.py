@@ -50,19 +50,10 @@ class EssentialHandler(BaseHTTPRequestHandler):
                       session['sid'] if session['is_new'] else None)
 
     def handle_save(self):
-        # session = self.store.get_session(self.req.cookie)
-        # user_data = session['data']
-        # form = self.req.form
-        # uid = form.get('id') or self.req.new_id()
-        # user_data[uid] = {'task': form.get('task', '내용 없음')}
-
         self._execute_save()
         self.res.redirect('/')
 
     def handle_remove(self):
-        # session = self.store.get_session(self.req.cookie)
-        # session['data'].pop(self.req.form.get('id'), None)
-
         self._execute_delete()
         self.res.redirect('/')
 
@@ -75,22 +66,10 @@ class EssentialHandler(BaseHTTPRequestHandler):
         self.res.json(session['data']) 
 
     def api_save_task(self):
-        # session = self.store.get_session(self.req.cookie)
-        # user_data = session['data']
-        # form = self.req.form
-        # uid = form.get('id') or self.req.new_id()
-        # user_data[uid] = {'task': form.get('task', '')}
-
         _, uid = self._execute_save()
         self.res.json({"status": "success", "id": uid})
 
     def api_delete_task(self):
-        # session = self.store.get_session(self.req.cookie)
-        # uid = self.req.form.get('id')
-        # # 데이터 존재 확인 후 삭제
-        # if uid in session['data']:
-        #     session['data'].pop(uid)
-
         _, existed = self._execute_delete()
         self.res.json({"status": "success" if existed else "fail"})
 
