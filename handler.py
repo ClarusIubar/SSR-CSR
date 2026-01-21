@@ -64,6 +64,10 @@ class Handler(BaseHTTPRequestHandler):
         self.req.path = self.path
         self.req.protocol = self.protocol_version
         
+        # [중요] logic.py의 AttributeError 방지를 위해 명시적 매핑 추가
+        self.req.content_type = self.headers.get('Content-Type', '')
+        self.req.user_agent = self.headers.get('User-Agent', '')
+
         # core.py의 Request는 'headers'(복수형)를 소유함
         for key, value in self.headers.items():
             self.req.headers[key] = value
@@ -80,7 +84,7 @@ class Handler(BaseHTTPRequestHandler):
         
         # send_response, send_header, end_headers 세트메뉴 123
         self.send_response(status_val, reason) # 와 200으로 안썼어!
-        for key, value in self.res.header.items():
+        for key, value in self.res.header.items(): # Response는 'header' 단수형
             self.send_header(key, value)
         self.send_header('X-Sequence-Trace', logs) # 관측 데이터 전파
         self.end_headers()
