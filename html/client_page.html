@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>CSR</title>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f1f5f9; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px 20px; margin: 0; }
+        .container { width: 100%; max-width: 650px; }
+        .input-group { background: var(--card); padding: 25px; border-radius: 16px; display: flex; gap: 12px; margin-bottom: 25px; }
+        input { background: rgba(15, 23, 42, 0.5); border: 1px solid #334155; color: white; padding: 12px 16px; border-radius: 8px; flex: 1; outline: none; }
+        
+        /* 공통 시스템 버튼 규격 */
+        .sys-nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .nav-btn { background: #1e293b; color: #38bdf8; padding: 10px 22px; border: 1px solid #334155; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.2s; cursor: pointer; }
+        .nav-btn:hover { background: #334155; transform: translateY(-2px); }
+
+        .task-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .task-card { background: var(--card); padding: 18px; border-radius: 12px; border-left: 5px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        #addBtn { background: var(--accent); color: #0f172a; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-edit { background: #334155; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; }
+        .btn-del { background: #450a0a; color: #ef4444; padding: 6px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-weight: 200; text-align: center; color: var(--accent);">CRUD</h1>
+        
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="임무를 입력하세요...">
+            <button id="addBtn">Add</button>
+        </div>
+
+        <div class="sys-nav">
+            <a href="/" class="nav-btn">← SSR 모드</a>
+            <a href="/maslow" class="nav-btn">매슬로우 →</a>
+        </div>
+
+        <div id="taskList" class="task-list"></div>
+    </div>
+
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const addBtn = document.getElementById('addBtn');
+        const taskList = document.getElementById('taskList');
+        let currentEditId = null;
+
+        async function loadTasks() {
+            const res = await fetch('/api/tasks');
+            const data = await res.json();
+            render(data);
+        }
+
+        function render(data) {
+            taskList.innerHTML = Object.entries(data).map(([id, item]) => `
+                <div class="task-card">
+                    <div class="task-info"><div class="task-text">${item.task}</div></div>
+                    <div class="actions">
+                        <button class="btn-edit" onclick="prepareUpdate('${id}', '${item.task}')">Edit</button>
+                        <button class="btn-del" onclick="deleteTask('${id}')">Del</button>
+                    </div>
+                </div>
+            `).join('') || '<div style="text-align:center;color:#475569;padding:20px;">No data found.</div>';
+        }
+
+        addBtn.onclick = async (e) => {
+            e.preventDefault();
+            const task = taskInput.value.trim();
+            if (!task) return;
+            const body = new URLSearchParams();
+            body.append('task', task);
+            if (currentEditId) body.append('id', currentEditId);
+
+            await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            });
+            currentEditId = null;
+            taskInput.value = '';
+            addBtn.innerText = 'Add Task';
+            loadTasks();
+        };
+
+        async function deleteTask(id) {
+            if(!confirm('삭제하시겠습니까?')) return;
+            await fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${id}`
+            });
+            loadTasks();
+        }
+
+        function prepareUpdate(id, task) {
+            currentEditId = id;
+            taskInput.value = task;
+            addBtn.innerText = 'Update';
+            taskInput.focus();
+        }
+
+        loadTasks();
+    </script>
+</body>
+</html>

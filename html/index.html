@@ -1,17 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><title>Essential System</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>SSR</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+        h1 { font-size: 2rem; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        .form-area { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 40px; }
+        input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        .execute-btn { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        
+        .sys-nav { margin-top: 50px; padding-top: 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: center; gap: 15px; }
+        .nav-btn { background: #1e293b; color: #38bdf8; padding: 10px 22px; border: 1px solid #334155; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .nav-btn:hover { background: #334155; transform: translateY(-2px); }
+    </style>
+</head>
 <body>
-    <h1>Data List</h1>
-    <table border="1" style="width:100%;">
+    <h1>CRUD</h1>
+    <table>
         <thead><tr><th>ID</th><th>Content</th><th>Action</th></tr></thead>
         <tbody>{rows}</tbody>
     </table>
-    <hr>
-    <form action="/process" method="POST">
-        <p>ID: <input type="text" name="id" placeholder="수정 시 ID 입력"></p>
-        <p>Task: <input type="text" name="task" required></p>
-        <button type="submit">Execute</button>
-    </form>
+
+    <div class="form-area">
+        <form action="/process" method="POST">
+            <p>UUID: <input type="text" name="id"   placeholder="수정 시 입력"></p>
+            <p>TASK: <input type="text" name="task" placeholder="임무를 입력" required></p>
+            <button type="submit" class="execute-btn">실행</button>
+        </form>
+    </div>
+
+    <div class="sys-nav">
+        <a href="/maslow" class="nav-btn">← 매슬로우</a>
+        <a href="/client" class="nav-btn">CSR 모드 →</a>
+    </div>
 </body>
 </html>
