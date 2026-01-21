@@ -1,36 +1,22 @@
 from http.server import BaseHTTPRequestHandler
 from core import Request, Response
 
-class EssentialHandler(BaseHTTPRequestHandler):
+# 아 몰라 이름은 가볍게.
+class Handler(BaseHTTPRequestHandler):
 
     def handle_request(self):
         self.req = Request(self)
         self.res = Response(self)
+        self.monitor = None # 모니터 필요하겠지. 동작할 때 마다 보고하게 시킬거니까.
         
-        router = {
-            ('GET' , '/client' ): self.show_client_page,
-            ('GET' , '/api/tasks' ): self.api_get_tasks,
-            ('POST', '/api/tasks' ): self.api_save_task,
-            ('POST', '/api/delete'): self.api_delete_task
-        }
-        
-        # 3. 실행: 예외 없이 즉각 대응
-        action = router.get(self.req.call)
-        # action()
+        # 할 수도 있고, 안 쓸 수도 있고 일단 주석처리해.
+        # router = {
+        #     ('GET' , '/client' ):    NotImplemented,
+        #     ('GET' , '/api/tasks' ): NotImplemented,
+        #     ('POST', '/api/tasks' ): NotImplemented,
+        #     ('POST', '/api/delete'): NotImplemented
+        # }
 
-    # 경로의 함수를 실행해
-    def do_GET(self): self.handle_request()
+    # 오버라이딩 빡세게 안할 거임. 만든 거 호출해버리면 그만이겠지.
+    def do_GET(self):  self.handle_request()
     def do_POST(self): self.handle_request()
-
-    # CSR용도
-    def show_client_page(self):
-        pass
-
-    def api_get_tasks(self):
-        pass
-
-    def api_save_task(self):
-        pass
-
-    def api_delete_task(self):
-        pass
