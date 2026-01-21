@@ -11,14 +11,14 @@ class Request:
         # request-header
         # self.host = None
         # self.auth = None
-        # self.content_type = None
-        # self.user_agent = None
 
         # headers
-        self.headers = {} # 너무 세분화 했나?
+        self.headers = {}
+        self.content_type = "" # 봉인해제!
+        self.user_agent = ""   # 봉인해제!
 
         # body
-        self.body = None
+        self.body: Any = None
 
 class Response:
     def __init__(self):
