@@ -50,16 +50,20 @@ class EssentialHandler(BaseHTTPRequestHandler):
                       session['sid'] if session['is_new'] else None)
 
     def handle_save(self):
-        session = self.store.get_session(self.req.cookie)
-        user_data = session['data']
-        form = self.req.form
-        uid = form.get('id') or self.req.new_id()
-        user_data[uid] = {'task': form.get('task', '내용 없음')}
+        # session = self.store.get_session(self.req.cookie)
+        # user_data = session['data']
+        # form = self.req.form
+        # uid = form.get('id') or self.req.new_id()
+        # user_data[uid] = {'task': form.get('task', '내용 없음')}
+
+        self._execute_save()
         self.res.redirect('/')
 
     def handle_remove(self):
-        session = self.store.get_session(self.req.cookie)
-        session['data'].pop(self.req.form.get('id'), None)
+        # session = self.store.get_session(self.req.cookie)
+        # session['data'].pop(self.req.form.get('id'), None)
+
+        self._execute_delete()
         self.res.redirect('/')
 
     # CSR용도
@@ -71,21 +75,45 @@ class EssentialHandler(BaseHTTPRequestHandler):
         self.res.json(session['data']) 
 
     def api_save_task(self):
+        # session = self.store.get_session(self.req.cookie)
+        # user_data = session['data']
+        # form = self.req.form
+        # uid = form.get('id') or self.req.new_id()
+        # user_data[uid] = {'task': form.get('task', '')}
+
+        _, uid = self._execute_save()
+        self.res.json({"status": "success", "id": uid})
+
+    def api_delete_task(self):
+        # session = self.store.get_session(self.req.cookie)
+        # uid = self.req.form.get('id')
+        # # 데이터 존재 확인 후 삭제
+        # if uid in session['data']:
+        #     session['data'].pop(uid)
+
+        _, existed = self._execute_delete()
+        self.res.json({"status": "success" if existed else "fail"})
+
+    # 공통
+    def not_found(self):
+        self.res.error(404, f"Path '{self.req.path}' is invalid.")
+
+    # logic만 분리해보기
+    def _execute_save(self):
+        # 공통로직 추출
         session = self.store.get_session(self.req.cookie)
         user_data = session['data']
         form = self.req.form
         uid = form.get('id') or self.req.new_id()
         user_data[uid] = {'task': form.get('task', '')}
-        self.res.json({"status": "success", "id": uid})
-
-    def api_delete_task(self):
+        return session, uid
+    
+    def _execute_delete(self):
         session = self.store.get_session(self.req.cookie)
         uid = self.req.form.get('id')
-        # 데이터 존재 확인 후 삭제
-        if uid in session['data']:
-            session['data'].pop(uid)
-        self.res.json({"status": "success"})
 
-    # 공통
-    def not_found(self):
-        self.res.error(404, f"Path '{self.req.path}' is invalid.")
+        existed = uid in session['data']
+        if existed:
+            session['data'].pop(uid)
+
+        return session, existed
