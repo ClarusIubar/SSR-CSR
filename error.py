@@ -10,7 +10,7 @@ class HTTPStatus(IntEnum):
     INTERNAL_ERROR = 500
 
 class ProtocolInterrupt(Exception):
-    def __init__(self, *args: object) -> None:
-        self.status = None
-        self.msg = None
-        self.location = None
+    def __init__(self, status: HTTPStatus, msg: str = ''):
+        self.status = status
+        self.msg = msg
+        # self.location = None
