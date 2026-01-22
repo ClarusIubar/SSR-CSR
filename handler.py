@@ -29,16 +29,22 @@ class Handler(BaseHTTPRequestHandler):
             # }
 
             try:
+                static_routes = {
+                    '/': 'index.html',
+                    '/maslow': 'maslow.html',
+                    '/maslow.json': 'maslow.json'
+                }
+
+                if self.path in static_routes:
+                    # 모든 정적 파일은 이제 이 메서드 하나로 통합니다.
+                    self.serve_static_file(static_routes[self.path])
+                    return
+                
                 # 2. 라우팅 테이블 정의
                 router = {
                     ('GET', '/api/tasks'):  logic.perform_read,
                     ('POST', '/api/tasks'): logic.perform_create
                 }
-                
-                # 3. 정적 자원 처리 (index.html)
-                if self.path == '/':
-                    self.serve_index()
-                    return
                 
                 # 4. 행위 식별 및 집행
                 action = router.get((self.command, self.path)) # method, path 아, request-line 애들이구나.
@@ -106,6 +112,29 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             # 예외 발생 시 에러 시퀀스로 강제 전이
             raise ProtocolInterrupt(HTTPStatus.NOT_FOUND, "Index missing")
+        
+
+    def serve_static_file(self, filename):
+            content_types = {
+                'html': 'text/html; charset=utf-8',
+                'css': 'text/css; charset=utf-8',
+                'json': 'application/json; charset=utf-8',
+            }
+            ext = filename.split('.')[-1] # .뒤에 끝에는 확장자
+            content_type = content_types.get(ext, 'text/plain') # 없으면 그냥 text로 처리
+
+            try:
+                with open(filename, 'rb') as f:
+                    content = f.read()
+                    monitor.notify(Event.EMIT, {"static_file": filename, "size": len(content)})
+                    
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header('Content-Type', content_type) # * 이렇게 할 거면, 애초에 확장자만 다루는 것을 함수화하면 되지 않나?
+                    self.end_headers()
+                    self.wfile.write(content)
+                    
+            except FileNotFoundError:
+                raise ProtocolInterrupt(HTTPStatus.NOT_FOUND, f"Missing: {filename}")
 
     # 오버라이딩 빡세게 안할 거임. 만든 거 호출해버리면 그만이겠지.
     def do_GET(self):  self.handle_request()
