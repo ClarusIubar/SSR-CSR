@@ -2,13 +2,31 @@ from http.server import BaseHTTPRequestHandler      # 핸들러는 원래 필요
 from core import Request, Response                  # 이것도 내 집착이야.
 from error import HTTPStatus, ProtocolInterrupt     # 에러도 따로 정했지.
 from observer import Reconnaissance, Event, monitor # 관측시설이야.
-import logic, json                                  # CRUD
+import logic, json, urllib.parse                    # CRUD
 
 # 아 몰라 이름은 가볍게.
 class Handler(BaseHTTPRequestHandler):
-    # [정찰 지침] IDE가 객체의 실체를 인지하도록 클래스 수준에서 선언
+    # [정찰 지침] IDE가 객체의 실체를 인지하도록 클래스 수준에서 선언 (조언 감사)
     req: Request
     res: Response
+
+    # 선언적 라우팅: if-else로 나누는 거 너무 싫어요!
+    @property
+    def api_routes(self):
+        return {
+            ('GET',    '/api/tasks'): logic.perform_read,
+            ('POST',   '/api/tasks'): logic.perform_create,
+            ('PUT',    '/api/tasks'): logic.perform_update,
+            ('DELETE', '/api/tasks'): logic.perform_delete,
+        }
+
+    @property
+    def static_routes(self):
+        return {
+            '/': 'index.html',
+            '/maslow': 'maslow.html',
+            '/maslow.json': 'maslow.json'
+        }
 
     def handle_request(self):
         with Reconnaissance(self) as recon:
@@ -17,35 +35,23 @@ class Handler(BaseHTTPRequestHandler):
             self._fill_request() # core.py 규격에 맞게 매핑
 
             try:
-                # 1. 이것은 중복 아닌가.
-                static_routes = {
-                    '/': 'index.html',
-                    '/maslow': 'maslow.html',
-                    '/maslow.json': 'maslow.json'
-                }
-
-                if self.path in static_routes:
-                    self.serve_static_file(static_routes[self.path])
+                if self.path in self.static_routes:
+                    self.serve_static_file(self.static_routes[self.path])
                 else:
-                    # 2. 라우팅 테이블 정의
-                    router = {
-                        ('GET',  '/api/tasks'): logic.perform_read,
-                        ('POST', '/api/tasks'): logic.perform_create
-                    }
-                    
-                    # 4. 행위 식별 및 집행
-                    action = router.get((self.command, self.path)) 
+                    action = self.api_routes.get((self.command, self.path)) 
                     if not action: 
                         raise ProtocolInterrupt(HTTPStatus.NOT_FOUND)
-                        
+
                     # 관측: 로직 실행 시작
-                    monitor.notify(Event.PROCESS, {"action": action.__name__})
-                    action(self, self.req, self.res)
+                    monitor.notify(Event.PROCESS, {"action": action.__name__}) # 실행하는 함수 이름이 보임.
+                    
+                    # req, res만 전달
+                    action(self.req, self.res)
 
                 self._emit(recon)
 
             except ProtocolInterrupt as pi: # 에러가 생기면
-                self.res.status_code, self.res.body = pi.status, {"err": pi.status.name}
+                self.res.status_code, self.res.body = pi.status, {"err": pi.status.name, "msg": pi.msg}
                 self._emit(recon)
 
     def _fill_request(self):
@@ -59,6 +65,17 @@ class Handler(BaseHTTPRequestHandler):
 
         for key, value in self.headers.items():
             self.req.headers[key] = value
+
+        # [핵심 개선] Body 파싱 통합: logic.py에서 handler.rfile을 직접 읽는 중복을 제거
+        length = int(self.headers.get('Content-Length', 0))
+        if length > 0:
+            raw = self.rfile.read(length).decode('utf-8')
+            if 'application/json' in self.req.content_type:
+                self.req.body = json.loads(raw)
+            else:
+                self.req.body = dict(urllib.parse.parse_qsl(raw))
+        else:
+            self.req.body = {}
 
     def _emit(self, recon):
         """core.py의 Response 규격을 Raw 프로토콜로 변환하여 방출"""
@@ -89,7 +106,7 @@ class Handler(BaseHTTPRequestHandler):
             'css': 'text/css; charset=utf-8',
             'json': 'application/json; charset=utf-8',
         }
-        ext = filename.split('.')[-1]
+        ext = filename.split('.')[-1] # 확장자
         return content_types.get(ext, 'text/plain')
 
     def serve_static_file(self, filename):
@@ -105,5 +122,8 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             raise ProtocolInterrupt(HTTPStatus.NOT_FOUND, f"Missing: {filename}")
 
-    def do_GET(self):  self.handle_request()
-    def do_POST(self): self.handle_request()
+    # 지원할 메서드 확장
+    def do_GET(self):    self.handle_request()
+    def do_POST(self):   self.handle_request()
+    def do_PUT(self):    self.handle_request()
+    def do_DELETE(self): self.handle_request()
