@@ -57,39 +57,78 @@
         </div>
 
     <script>
+        const Store = {
+            maslowData: [],
+            traces: [] 
+        };
+
         const MaslowApp = {
-            async init() {
+            async request(path) {
                 try {
-                    const response = await fetch('/maslow.json');
-                    const data = await response.json();
-                    this.render(data);
-                } catch (error) {
-                    console.error("데이터 로드 실패:", error);
+                    const res = await fetch(path);
+                    
+                    const traceHeader = res.headers.get('X-Sequence-Trace');
+                    if (traceHeader) {
+                        Store.traces = JSON.parse(traceHeader);
+                    }
+
+                    if (!res.ok) {
+                        // [개선] 추상적인 에러 대신 상태 코드와 경로를 정찰 데이터에 수동 병합
+                        this.pushClientError("HTTP_ERROR", { status: res.status, path: path });
+                        return null;
+                    }
+                    return await res.json();
+                } catch (e) {
+                    // [개선] 네트워크 단절 등 물리적 장애 발생 시 구체적 원인 기록
+                    this.pushClientError("NETWORK_FAILURE", { message: e.message, target: path });
+                    return null;
                 }
             },
 
-            render(data) {
-                const container = document.getElementById('pyramid');
-                container.innerHTML = data.map(item => `
-                    <div class="brick l${item.level}">
-                        <div class="cell">
-                            <div class="label">${item.level}단계. ${item.step_name}</div>
-                            <div class="content">${item.step_desc}</div>
+            // 클라이언트에서 감지된 문제를 정찰 규격에 맞춰 적재하는 유틸리티
+            pushClientError(event, data) {
+                Store.traces.push({
+                    event: `SIGNAL_${event}`,
+                    data: data
+                });
+                this.render();
+            },
+
+            async init() {
+                const data = await this.request('/maslow.json');
+                if (data) {
+                    Store.maslowData = data;
+                    this.render();
+                }
+            },
+
+            render() {
+                const pyramidContainer = document.getElementById('pyramid');
+                const logContainer = document.getElementById('recon-log-area');
+
+                if (pyramidContainer) {
+                    pyramidContainer.innerHTML = Store.maslowData.map(item => `
+                        <div class="brick l${item.level}">
+                            <div class="cell">
+                                <div class="label">${item.level}단계. ${item.step_name}</div>
+                                <div class="content">${item.step_desc}</div>
+                            </div>
+                            <div class="cell">
+                                <div class="label">AI 분석: 코드의 호흡</div>
+                                <div class="content">${item.analogy}</div>
+                            </div>
+                            <div class="cell">
+                                <div class="label">성찰</div>
+                                <div class="content">${item.thought}</div>
+                            </div>
                         </div>
-                        <div class="cell">
-                            <div class="label">AI가 생각하는 코드의 호흡</div>
-                            <div class="content">${item.analogy}</div>
-                        </div>
-                        <div class="cell">
-                            <div class="label">성찰</div>
-                            <div class="content">${item.thought}</div>
-                        </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
             }
         };
 
         MaslowApp.init();
     </script>
+
 </body>
 </html>
