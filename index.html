@@ -8,101 +8,78 @@
         #root { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .recon-log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; font-family: monospace; margin-top: 20px; font-size: 0.9em; }
         .recon-log h4 { color: #569cd6; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .event-line { margin: 5px 0; border-left: 2px solid #4ec9b0; padding-left: 10px; }
-        .event-name { color: #ce9178; font-weight: bold; }
         .control-panel { display: flex; gap: 10px; margin-bottom: 20px; }
         input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #1d4ed8; }
-        ul { list-style: none; padding: 0; }
-        li { padding: 8px; border-bottom: 1px solid #eee; }
+        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; }
+        button.del-btn { background: #ef4444; margin-left: 5px; }
+        button.edit-btn { background: #64748b; margin-left: 10px; }
+        li { margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; display: flex; align-items: center; }
+        li span { flex: 1; }
     </style>
 </head>
 <body>
-    <div id="root">
-        </div>
+    <div id="root"></div>
 
     <script>
-        // 정찰 지침: 모든 통신 행위는 기술적 식별자를 통해 추적 가능해야 함
-        const Store = {
-            tasks: [],
-            traces: [] 
-        };
+        // 일꾼이 쓸 도구함
+        const Store = { tasks: [], traces: [] };
 
         const App = {
-            // 1. 서버 통신 및 정찰 데이터 동기화
-            async request(path, method = 'GET', body = null) {
-                try {
-                    const res = await fetch(path, {
-                        method,
-                        headers: body ? { 'Content-Type': 'application/json' } : {},
-                        body: body ? JSON.stringify(body) : null
-                    });
+            // [중앙 집행부] 모든 요청은 이 통로를 거친다. // 이러니까 결합도가 또 높아졌죠?
+            // 정찰기만 지워야 하는데, 여기를 관통해야만 하니까 탈부착이 안되잖소!
+            async request(url, method = 'GET', body = null) {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body) options.body = JSON.stringify(body);
 
-                    // 서버의 관측 헤더 확보
-                    const traceHeader = res.headers.get('X-Sequence-Trace');
-                    if (traceHeader) {
-                        Store.traces = JSON.parse(traceHeader);
-                    }
+                const res = await fetch(url, options);
+                
+                // [정찰 보고서] 서버가 준 X-Sequence-Trace를 뜯어서 저장
+                const traceHeader = res.headers.get('X-Sequence-Trace');
+                if (traceHeader) Store.traces = JSON.parse(traceHeader);
 
-                    // 상태 규격을 기록
-                    if (!res.ok) {
-                        this.logInternalState("HTTP_STATUS_EXCEPTION", { 
-                            status: res.status, 
-                            method: method, 
-                            path: path 
-                        });
-                        return { err: `HTTP_${res.status}` };
-                    }
-
-                    return await res.json();
-                    
-                } catch (e) {
-                    // 네트워크 단절 등 물리적 계층의 오류 기록
-                    this.logInternalState("TRANSPORT_LAYER_ERROR", { 
-                        type: e.name, 
-                        message: e.message 
-                    });
-                    return { err: "CONNECTION_REFUSED" };
-                }
-            },
-
-            // 2. 관측 데이터 규격화 및 렌더링 트리거
-            logInternalState(event, data) {
-                Store.traces.push({
-                    event: `SIGNAL_${event}`,
-                    data: data
-                });
+                const data = await res.json();
+                
+                // Read 요청일 때는 데이터를 보관함에 넣기
+                if (method === 'GET' && data.tasks) Store.tasks = data.tasks;
+                
                 this.render();
+                return { ok: res.ok, data };
             },
 
-            // 3. 비즈니스 로직 (CRUD)
-            async loadTasks() {
-                const data = await this.request('/api/tasks');
-                if (!data.err) {
-                    Store.tasks = data.tasks || [];
-                }
-                this.render();
-            },
+            // CRUD: 읽기 (기본 로딩)
+            async loadTasks() { await this.request('/api/tasks'); },
 
+            // CRUD: 생성
             async addTask() {
                 const input = document.getElementById('taskInput');
                 if (!input.value) return;
-
-                const result = await this.request('/api/tasks', 'POST', { task: input.value });
-                if (!result.err) {
-                    input.value = '';
-                    await this.loadTasks();
-                }
+                await this.request('/api/tasks', 'POST', { task: input.value });
+                input.value = '';
+                await this.loadTasks(); // 저장했으면 새로 읽어와야지.
             },
 
-            // 4. 관측 가시성을 극대화한 렌더링
+            // CRUD: 수정
+            async updateTask(index) {
+                const newTask = prompt("수정할 내용을 입력하세요:", Store.tasks[index]);
+                if (newTask === null) return; // 취소하면 관둬.
+                await this.request('/api/tasks', 'PUT', { index, task: newTask });
+                await this.loadTasks(); // 고쳤으면 다시 확인해.
+            },
+
+            // CRUD: 삭제
+            async deleteTask(index) {
+                if (!confirm("이 시퀀스를 제거할까요?")) return;
+                await this.request('/api/tasks', 'DELETE', { index });
+                await this.loadTasks(); // 지웠으면 목록 갱신해.
+            },
+
             render() {
                 const root = document.getElementById('root');
-                if (!root) return;
-                
                 root.innerHTML = `
-                    <h3>CRUD & Sequence Observation</h3>
+                    <h3>Sequence Manager</h3>
                     
                     <div class="control-panel">
                         <input type="text" id="taskInput" placeholder="기록할 과업 명칭...">
@@ -113,7 +90,12 @@
                         <h4>Storage List</h4>
                         <ul>
                             ${Store.tasks.length > 0 
-                                ? Store.tasks.map(t => `<li>${t}</li>`).join('') 
+                                ? Store.tasks.map((t, i) => `
+                                    <li>
+                                        <span>${t}</span>
+                                        <button class="edit-btn" onclick="App.updateTask(${i})">수정</button>
+                                        <button class="del-btn" onclick="App.deleteTask(${i})">삭제</button>
+                                    </li>`).join('') 
                                 : '<li>비어 있는 저장소입니다.</li>'}
                         </ul>
                     </div>
@@ -133,8 +115,8 @@
             }
         };
 
+        // 시작하자마자 일단 읽어.
         window.onload = () => App.loadTasks();
     </script>
-
 </body>
 </html>
