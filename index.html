@@ -23,16 +23,14 @@
         </div>
 
     <script>
-        // 아 몰라 여기 외에는 노다지임. 
-        // 여기 안에만 작성하자.
-
+        // 정찰 지침: 모든 통신 행위는 기술적 식별자를 통해 추적 가능해야 함
         const Store = {
             tasks: [],
-            traces: [] // 서버에서 받은 정찰 데이터 보관
+            traces: [] 
         };
 
         const App = {
-            // 1. 서버 통신 및 관측 데이터 추출
+            // 1. 서버 통신 및 정찰 데이터 동기화
             async request(path, method = 'GET', body = null) {
                 try {
                     const res = await fetch(path, {
@@ -41,25 +39,49 @@
                         body: body ? JSON.stringify(body) : null
                     });
 
-                    // 서버가 배후에서 수집한 X-Sequence-Trace 읽기
+                    // 서버의 관측 헤더 확보
                     const traceHeader = res.headers.get('X-Sequence-Trace');
                     if (traceHeader) {
                         Store.traces = JSON.parse(traceHeader);
-                        // 콘솔에도 표 형식으로 정찰 보고
-                        console.table(Store.traces);
                     }
+
+                    // 상태 규격을 기록
+                    if (!res.ok) {
+                        this.logInternalState("HTTP_STATUS_EXCEPTION", { 
+                            status: res.status, 
+                            method: method, 
+                            path: path 
+                        });
+                        return { err: `HTTP_${res.status}` };
+                    }
+
                     return await res.json();
                     
                 } catch (e) {
-                    console.error("통신 실패:", e);
-                    return { err: "Connection Failed" };
+                    // 네트워크 단절 등 물리적 계층의 오류 기록
+                    this.logInternalState("TRANSPORT_LAYER_ERROR", { 
+                        type: e.name, 
+                        message: e.message 
+                    });
+                    return { err: "CONNECTION_REFUSED" };
                 }
             },
 
-            // 2. 행위(Action) 정의
+            // 2. 관측 데이터 규격화 및 렌더링 트리거
+            logInternalState(event, data) {
+                Store.traces.push({
+                    event: `SIGNAL_${event}`,
+                    data: data
+                });
+                this.render();
+            },
+
+            // 3. 비즈니스 로직 (CRUD)
             async loadTasks() {
                 const data = await this.request('/api/tasks');
-                Store.tasks = data.tasks || [];
+                if (!data.err) {
+                    Store.tasks = data.tasks || [];
+                }
                 this.render();
             },
 
@@ -67,21 +89,24 @@
                 const input = document.getElementById('taskInput');
                 if (!input.value) return;
 
-                await this.request('/api/tasks', 'POST', { task: input.value });
-                input.value = '';
-                await this.loadTasks();
+                const result = await this.request('/api/tasks', 'POST', { task: input.value });
+                if (!result.err) {
+                    input.value = '';
+                    await this.loadTasks();
+                }
             },
 
-            // 3. 화면 그리기 (Rendering)
+            // 4. 관측 가시성을 극대화한 렌더링
             render() {
                 const root = document.getElementById('root');
+                if (!root) return;
                 
                 root.innerHTML = `
                     <h3>CRUD & Sequence Observation</h3>
                     
                     <div class="control-panel">
-                        <input type="text" id="taskInput" placeholder="새로운 과업 입력...">
-                        <button onclick="App.addTask()">과업 기록</button>
+                        <input type="text" id="taskInput" placeholder="기록할 과업 명칭...">
+                        <button onclick="App.addTask()">과업 확정</button>
                     </div>
 
                     <div class="content-view">
@@ -89,25 +114,27 @@
                         <ul>
                             ${Store.tasks.length > 0 
                                 ? Store.tasks.map(t => `<li>${t}</li>`).join('') 
-                                : '<li>기록된 과업이 없습니다.</li>'}
+                                : '<li>비어 있는 저장소입니다.</li>'}
                         </ul>
                     </div>
 
                     <div class="recon-log">
                         <h4>Reconnaissance: Sequence Trace</h4>
-                        ${Store.traces.map(t => `
-                            <div class="event-line">
-                                <span class="event-name">[${t.event}]</span> 
-                                <span class="event-data">${JSON.stringify(t.data)}</span>
-                            </div>
-                        `).join('')}
+                        <div class="trace-box" style="background: #121212; border: 1px solid #333; padding: 12px;">
+                            ${Store.traces.map(t => `
+                                <div class="event-line" style="border-bottom: 1px solid #222; padding: 4px 0;">
+                                    <span class="event-tag" style="color: #dcdcaa; font-weight: bold;">[${t.event}]</span> 
+                                    <span class="event-payload" style="color: #9cdcfe; font-size: 0.9em;">${JSON.stringify(t.data)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
             }
         };
 
-        // 초기 실행
-        App.loadTasks();
+        window.onload = () => App.loadTasks();
     </script>
+
 </body>
 </html>
