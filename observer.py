@@ -59,4 +59,6 @@ class Reconnaissance: # 이건 무슨뜻이지? / '정찰'이래. / 오오.
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             monitor.notify(Event.SIGNAL, {"type": exc_type.__name__})
+        # 시각적 구분선
+        print("-" * 50)
         monitor._observers.clear() # 정찰종료!
