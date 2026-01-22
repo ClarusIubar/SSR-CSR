@@ -31,7 +31,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 # 2. 라우팅 테이블 정의
                 router = {
-                    ('GET', '/api/tasks'): logic.perform_read,
+                    ('GET', '/api/tasks'):  logic.perform_read,
                     ('POST', '/api/tasks'): logic.perform_create
                 }
                 
@@ -83,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
         status_name = status_obj.name
         
         # send_response, send_header, end_headers 세트메뉴 123
-        self.send_response(status_val, reason) # 와 200으로 안썼어!
+        self.send_response(status_val, reason) #status, reason_phrase
         for key, value in self.res.header.items(): # Response는 'header' 단수형
             self.send_header(key, value)
         self.send_header('X-Sequence-Trace', logs) # 관측 데이터 전파
